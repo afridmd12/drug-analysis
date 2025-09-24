@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drug Rating Predictor</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea, #764ba2, #6dd5ed);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 30px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 800px;
+    }
+    .form-control, .form-select {
+      background: rgba(255, 255, 255, 0.25);
+      border: none;
+      color: #fff;
+    }
+    .form-select option { background: #2c2f48; color: #fff; }
+    label { font-weight: 600; color: #fff; }
+    h2 { color: #fff; font-weight: bold; text-align: center; margin-bottom: 20px; }
+    .btn-custom {
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      color: white; font-weight: 600;
+      border-radius: 10px;
+      padding: 10px 20px;
+    }
+    .btn-custom:hover { transform: scale(1.05); }
+  </style>
+</head>
+<body>
+  <div class="glass-card">
+    <h2>Predict Drug Rating</h2>
+
+    <!-- Prefilled Example Selector -->
+    <div class="mb-3">
+      <label style="color:white;">Choose Prefilled Example:</label>
+      <select id="exampleSelect" class="form-select" onchange="fillExample()">
+        <option value="">-- Select Example --</option>
+        <option value="1">Example 1 – Ibuprofen (Pain Relief)</option>
+        <option value="2">Example 2 – Paracetamol (Fever)</option>
+        <option value="3">Example 3 – Metformin (Diabetes)</option>
+        <option value="4">Example 4 – Amoxicillin (Infection)</option>
+        <option value="5">Example 5 – Cetirizine (Allergy)</option>
+        <option value="6">High Case 1 – Ibuprofen Strong Profile</option>
+      </select>
+    </div>
+
+    <form method="POST" action="{{ url_for('predict') }}" id="drugForm">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label>Generic Name</label>
+          <select name="generic_name" id="generic_name" class="form-select" required>
+            {% for val in options['generic_name'] %}
+            <option value="{{ val }}">{{ val }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label>Medical Condition</label>
+          <select name="medical_condition" id="medical_condition" class="form-select" required>
+            {% for val in options['medical_condition'] %}
+            <option value="{{ val }}">{{ val }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label>Drug Class</label>
+          <select name="drug_classes" id="drug_classes" class="form-select" required>
+            {% for val in options['drug_classes'] %}
+            <option value="{{ val }}">{{ val }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label>Rx/OTC</label>
+          <select name="rx_otc" id="rx_otc" class="form-select" required>
+            {% for val in options['rx_otc'] %}
+            <option value="{{ val }}">{{ val }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label>Pregnancy Category</label>
+          <select name="pregnancy_category" id="pregnancy_category" class="form-select" required>
+            {% for val in options['pregnancy_category'] %}
+            <option value="{{ val }}">{{ val }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label>CSA</label>
+          <select name="csa" id="csa" class="form-select" required>
+            {% for val in options['csa'] %}
+            <option value="{{ val }}">{{ val }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label>Activity (%)</label>
+          <input type="number" class="form-control" name="activity" id="activity" required>
+        </div>
+        <div class="col-md-6">
+          <label>Alcohol (0/1)</label>
+          <input type="number" class="form-control" name="alcohol" id="alcohol" required>
+        </div>
+        <div class="col-md-12">
+          <label>Number of Reviews</label>
+          <input type="number" class="form-control" name="no_of_reviews" id="no_of_reviews" required>
+        </div>
+        <div class="col-md-12">
+          <label>Side Effects</label>
+          <input type="text" class="form-control" name="side_effects" id="side_effects">
+        </div>
+        <div class="col-md-12">
+          <label>Medical Condition Description</label>
+          <textarea class="form-control" name="medical_condition_description" id="medical_condition_description" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="text-center mt-4">
+        <button type="submit" class="btn btn-custom">Predict</button>
+      </div>
+    </form>
+  </div>
+
+<script>
+  const examples = {
+  1: {
+    generic_name: "ibuprofen",
+    medical_condition: "Pain",
+    drug_classes: "Nonsteroidal anti-inflammatory drugs",
+    rx_otc: "OTC",
+    pregnancy_category: "C",
+    csa: "N",
+    activity: 85,
+    alcohol: 0,
+    no_of_reviews: 320,
+    side_effects: "mild dizziness",
+    medical_condition_description: "Used for pain and inflammation relief."
+  },
+  2: {
+    generic_name: "paracetamol Brand names: Panadol, Calpol, Tylenol , Alvedon",
+    medical_condition: "Hayfever",
+    drug_classes: "Analgesic combinations",
+    rx_otc: "OTC",
+    pregnancy_category: "B",
+    csa: "N",
+    activity: 90,
+    alcohol: 0,
+    no_of_reviews: 500,
+    side_effects: "rare nausea",
+    medical_condition_description: "Common fever reducer and mild pain relief."
+  },
+  3: {
+    generic_name: "metformin",
+    medical_condition: "Diabetes (Type 2)",
+    drug_classes: "Antidiabetic combinations",
+    rx_otc: "Rx",
+    pregnancy_category: "B",
+    csa: "N",
+    activity: 88,
+    alcohol: 0,
+    no_of_reviews: 800,
+    side_effects: "stomach upset",
+    medical_condition_description: "Used to control blood sugar in type 2 diabetes."
+  },
+  4: {
+    generic_name: "amoxicillin",
+    medical_condition: "Pneumonia",
+    drug_classes: "Aminopenicillins",
+    rx_otc: "Rx",
+    pregnancy_category: "B",
+    csa: "N",
+    activity: 92,
+    alcohol: 0,
+    no_of_reviews: 600,
+    side_effects: "rash",
+    medical_condition_description: "Antibiotic for bacterial infections."
+  },
+  5: {
+    generic_name: "cetirizine",
+    medical_condition: "Allergies",
+    drug_classes: "Antihistamines",
+    rx_otc: "OTC",
+    pregnancy_category: "B",
+    csa: "N",
+    activity: 80,
+    alcohol: 0,
+    no_of_reviews: 400,
+    side_effects: "drowsiness",
+    medical_condition_description: "Relieves allergy symptoms like runny nose and itching."
+  },
+  6: { 
+      generic_name: "ibuprofen",
+      medical_condition: "Pain",
+      drug_classes: "Miscellaneous analgesics",
+      rx_otc: "OTC",
+      pregnancy_category: "B",
+      csa: "N",
+      activity: 95,
+      alcohol: 0,
+      no_of_reviews: 1200,
+      side_effects: "",
+      medical_condition_description: "Highly effective pain relief."
+    },
+};
+
+  function fillExample() {
+    const ex = document.getElementById("exampleSelect").value;
+    if (examples[ex]) {
+      Object.keys(examples[ex]).forEach(key => {
+        if (document.getElementById(key)) {
+          document.getElementById(key).value = examples[ex][key];
+        }
+      });
+    }
+  }
+</script>
+
+</body>
+</html>
