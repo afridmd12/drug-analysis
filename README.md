@@ -96,7 +96,7 @@ Missing values are handled safely in preprocessing.
 
 ### Clone the Repository
 ```bash
-git clone https://github.com/your-username/Drugs-Analysis.git
+https://github.com/afridmd12/drug-analysis.git
 cd Drugs-Analysis
 ```
 
